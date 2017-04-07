@@ -122,4 +122,8 @@ class SiteController extends Controller
     {
         return $this->render('about');
     }
+    public function actionSay($target = 'Word')
+    {
+        return $this->render('say',['target'=>$target]);
+    }
 }
