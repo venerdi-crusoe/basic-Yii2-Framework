@@ -1,97 +1,124 @@
 <?php
+
 namespace app\controllers;
 
 use Yii;
-use yii\web\Controller;
-use yii\data\Pagination;
 use app\models\Country;
+use app\models\CountrySearch;
+use yii\web\Controller;
+use yii\web\NotFoundHttpException;
+use yii\filters\VerbFilter;
 
+/**
+ * CountryController implements the CRUD actions for Country model.
+ */
+class CountryController extends Controller
+{
+    /**
+     * @inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+            'verbs' => [
+                'class' => VerbFilter::className(),
+                'actions' => [
+                    'delete' => ['POST'],
+                ],
+            ],
+        ];
+    }
 
-	class CountryController extends Controller{
+    /**
+     * Lists all Country models.
+     * @return mixed
+     */
+    public function actionIndex()
+    {
+        $searchModel = new CountrySearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
-		public function actionIndex(){
-			//andiamo ad utilizzare ActiveRecord
-			$query = Country::find();
-			//Select
+        return $this->render('index', [
+            'searchModel' => $searchModel,
+            'dataProvider' => $dataProvider,
+        ]);
+    }
 
-			//Paginazione
-			$pagination = new Pagination([
-			'defaultPageSize' => 5,
-			'totalCount' => $query->count(),
-			]);
+    /**
+     * Displays a single Country model.
+     * @param string $id
+     * @return mixed
+     */
+    public function actionView($id)
+    {
+        return $this->render('view', [
+            'model' => $this->findModel($id),
+        ]);
+    }
 
-			$countries = $query->orderBy('name')
-							->offset($pagination->offset)
-							->limit($pagination->limit)
-							->all();
+    /**
+     * Creates a new Country model.
+     * If creation is successful, the browser will be redirected to the 'view' page.
+     * @return mixed
+     */
+    public function actionCreate()
+    {
+        $model = new Country();
 
-			return $this->render('index',[
-				'countries' => $countries,
-				'pagination' => $pagination,
-			]);
+        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            return $this->redirect(['view', 'id' => $model->code]);
+        } else {
+            return $this->render('create', [
+                'model' => $model,
+            ]);
+        }
+    }
 
-		}
+    /**
+     * Updates an existing Country model.
+     * If update is successful, the browser will be redirected to the 'view' page.
+     * @param string $id
+     * @return mixed
+     */
+    public function actionUpdate($id)
+    {
+        $model = $this->findModel($id);
 
-		public function actionView($code){
+        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            return $this->redirect(['view', 'id' => $model->code]);
+        } else {
+            return $this->render('update', [
+                'model' => $model,
+            ]);
+        }
+    }
 
-       if(isset($code) && is_string($code)){
-         $code=addslashes($code);
-         $model = $this->findModel($code);
+    /**
+     * Deletes an existing Country model.
+     * If deletion is successful, the browser will be redirected to the 'index' page.
+     * @param string $id
+     * @return mixed
+     */
+    public function actionDelete($id)
+    {
+        $this->findModel($id)->delete();
 
-         //Country::find()->where(['code' => $code])->one();
-         //la Select
-         return $this->render('view',['model' => $model]);
+        return $this->redirect(['index']);
+    }
 
-     } else{
-         return $this->redirect('index.php?r=country');
-      }
-
-     }
-
-		 public function findModel($code){
-
-			$arrQuery = Country::find()->where(['code' => $code])->one();
-
-			//print_r($arrQuery);die();
-			return $arrQuery;
-
-		}
-
-		public function actionDelete($code){
-			$model = $this->findModel($code);
-			$model->delete();
-			return $this->redirect('index.php?r=country');
-
-		}
-
-		public function actionCreate(){
-
-		 //creo un nuovo model
-			$model = new Country();
-			if ($model->load(Yii::$app->request->post()) && $model->validate()) {
-				 //print_r($model); die();
-				 $model->save();
-				 return $this->redirect(['view', 'code' => $model->code]);
-			}else{
-				 return $this->render('create', [
-							'model' => $model,
-						 ]);
-			 }
-
-		}
-
-		public function actionUpdate($code){
-			$model = new Country();
-			$model = $this->findModel($code);
-
-			if($model->load(Yii::$app->request->post()) && $model->validate()){
-				$model->save();
-				return $this->redirect(['view', 'code'=> $model->code]);
-			}else {
-				return $this->render ('update', ['model'=> $model]);
-			}
-		}
-
-	}
-
-?>
+    /**
+     * Finds the Country model based on its primary key value.
+     * If the model is not found, a 404 HTTP exception will be thrown.
+     * @param string $id
+     * @return Country the loaded model
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    protected function findModel($id)
+    {
+        if (($model = Country::findOne($id)) !== null) {
+            return $model;
+        } else {
+            throw new NotFoundHttpException('The requested page does not exist.');
+        }
+    }
+}
